@@ -9,16 +9,21 @@ const app = express();
 // ── Security headers (hides Express, sets CSP, etc.) ──────────────────────────
 app.use(helmet());
 
-// ── CORS: only allow your frontend ────────────────────────────────────────────
-const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
-  : [];
+// ── CORS: updated for Vercel + Render ─────────────────────────────────────────
+const allowedOrigins = [
+  'https://addis-meetup.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
 
-// Change lines 20-21 in index.js
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow browsers and local testing to see the API
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // If there's no origin (direct browser visit) or it's in our list, allow it
+    if (!origin || allowedOrigins.includes(origin)) {
+      return cb(null, true);
+    }
+    // Log the rejected origin so you can see it in Render logs
+    console.log("Rejected Origin:", origin);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
