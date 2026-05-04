@@ -14,9 +14,13 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
   : [];
 
-// Replace lines 17-27 with this:
 app.use(cors({
-  origin: true, // This tells the bouncer: "Let everyone in!"
+  origin: (origin, cb) => {
+    // Allow requests with no origin (mobile apps, curl) only in dev
+    if (!origin && process.env.NODE_ENV !== 'production') return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
