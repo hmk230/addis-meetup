@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f2f2f7;
+  color: #111827;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply w-full bg-[#4ade80] hover:bg-[#22c55e] text-white font-bold py-4 px-5 rounded-2xl transition-all duration-150 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-200 text-[15px];
+  }
+  .btn-secondary {
+    @apply w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3.5 px-5 rounded-2xl border border-gray-200 transition-all duration-150 active:scale-98 text-[14px];
+  }
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 px-5 rounded-xl transition-all duration-150;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full border-[1.5px] border-gray-200 rounded-xl px-4 py-3.5 text-[14px] focus:outline-none focus:border-[#4ade80] bg-white transition text-gray-900 placeholder-gray-300;
+  }
+  .input-label {
+    @apply block text-[13px] font-semibold text-gray-600 mb-1.5;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-[18px] border-[1.5px] border-gray-100 p-4 shadow-sm;
+  }
+
+  /* Status badges */
+  .badge-pending  { @apply bg-amber-50 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-full; }
+  .badge-approved { @apply bg-green-50 text-green-800 text-[11px] font-bold px-2.5 py-1 rounded-full; }
+  .badge-rejected { @apply bg-red-50 text-red-800 text-[11px] font-bold px-2.5 py-1 rounded-full; }
+  .badge-open     { @apply bg-green-50 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full; }
+  .badge-closed   { @apply bg-gray-100 text-gray-600 text-[11px] font-bold px-2.5 py-1 rounded-full; }
+  .spots-pill     { @apply bg-green-50 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full; }
+  .spots-pill-few { @apply bg-amber-50 text-amber-700 text-[11px] font-bold px-2.5 py-1 rounded-full; }
+}
