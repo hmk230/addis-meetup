@@ -16,10 +16,11 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow server-to-server or mobile tools in dev
-    if (!origin && process.env.NODE_ENV !== 'production') return cb(null, true);
-    
-    // Log for debugging (Check your Render logs to see this!)
+    // Allow requests with no origin (like mobile apps, curl, or server-side fetches)
+    if (!origin) {
+      return cb(null, true);
+    }
+
     if (allowedOrigins.includes(origin)) {
       cb(null, true);
     } else {
