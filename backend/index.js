@@ -11,15 +11,21 @@ app.use(helmet());
 
 // ── CORS: only allow your frontend ────────────────────────────────────────────
 const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim()) // .trim() removes accidental spaces
   : [];
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (mobile apps, curl) only in dev
+    // Allow server-to-server or mobile tools in dev
     if (!origin && process.env.NODE_ENV !== 'production') return cb(null, true);
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
+    
+    // Log for debugging (Check your Render logs to see this!)
+    if (allowedOrigins.includes(origin)) {
+      cb(null, true);
+    } else {
+      console.error(`CORS BLOCKED: ${origin} is not in`, allowedOrigins);
+      cb(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true,
 }));
