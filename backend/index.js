@@ -16,15 +16,12 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (like mobile apps, curl, or server-side fetches)
-    if (!origin) {
-      return cb(null, true);
-    }
+    // This fix is crucial for the "CORS BLOCKED: undefined" error
+    if (!origin) return cb(null, true); 
 
     if (allowedOrigins.includes(origin)) {
       cb(null, true);
     } else {
-      console.error(`CORS BLOCKED: ${origin} is not in`, allowedOrigins);
       cb(new Error('Not allowed by CORS'));
     }
   },
