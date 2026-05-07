@@ -10,7 +10,8 @@ import { CheckCircle, XCircle, Clock, Image } from 'lucide-react';
 const STATUSES = ['pending', 'approved', 'rejected'];
 
 export default function AdminRegistrations() {
-  const { meetup_id } = useParams();
+  // Route is /admin/meetups/:id/registrations — param name is "id"
+  const { id: meetup_id } = useParams();
   const { t } = useLang();
   const [registrations, setRegistrations] = useState([]);
   const [meetup, setMeetup] = useState(null);
@@ -25,7 +26,8 @@ export default function AdminRegistrations() {
     ]).then(([r, m]) => {
       setRegistrations(r.data);
       setMeetup(m.data);
-    }).finally(() => setLoading(false));
+    }).catch(() => toast.error('Failed to load registrations'))
+      .finally(() => setLoading(false));
   }, [meetup_id]);
 
   const updateStatus = async (id, status) => {
@@ -39,13 +41,17 @@ export default function AdminRegistrations() {
   };
 
   const filtered = filter === 'all' ? registrations : registrations.filter(r => r.payment_status === filter);
-
   const counts = {
     all: registrations.length,
     pending: registrations.filter(r => r.payment_status === 'pending').length,
     approved: registrations.filter(r => r.payment_status === 'approved').length,
     rejected: registrations.filter(r => r.payment_status === 'rejected').length,
   };
+
+  function fmtAmount(n) {
+    if (!n) return '—';
+    return Number(n).toLocaleString('en', { minimumFractionDigits: n % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 }) + ' ETB';
+  }
 
   return (
     <Layout title={meetup?.title || 'Registrations'} back>
@@ -64,22 +70,30 @@ export default function AdminRegistrations() {
       {loading ? (
         <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="card h-24 animate-pulse bg-gray-100" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">No registrations found</div>
+        <div className="text-center py-12 text-gray-400">
+          <div className="text-3xl mb-2">📋</div>
+          <p>No registrations found</p>
+        </div>
       ) : (
         <div className="space-y-3 pb-4">
           {filtered.map(reg => (
             <div key={reg.id} className="card">
+              {/* Header */}
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <p className="font-bold text-sm">{reg.users?.full_name}</p>
+                  <p className="font-bold text-sm">{reg.users?.full_name || 'Unknown'}</p>
                   <p className="text-xs text-gray-500">{reg.users?.phone} · Age {reg.users?.age}</p>
                 </div>
                 <StatusBadge status={reg.payment_status} />
               </div>
 
-              <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+              {/* Details */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
                 <span>👥 {reg.player_count} player{reg.player_count > 1 ? 's' : ''}</span>
+                <span>🎮 {reg.game_count || 1} game{(reg.game_count || 1) > 1 ? 's' : ''}</span>
+                <span>💰 {fmtAmount(reg.total_amount)}</span>
                 <span>🕐 {new Date(reg.registered_at).toLocaleDateString()}</span>
+                {reg.ref_code && <span className="col-span-2 font-mono font-bold text-green-600">🎫 {reg.ref_code}</span>}
               </div>
 
               {/* Screenshot */}
@@ -89,10 +103,10 @@ export default function AdminRegistrations() {
                   <Image size={13} /> View Payment Screenshot
                 </button>
               ) : (
-                <p className="text-xs text-gray-300 mb-3 italic">No screenshot uploaded</p>
+                <p className="text-xs text-gray-300 mb-3 italic">No screenshot uploaded yet</p>
               )}
 
-              {/* Actions */}
+              {/* Action buttons */}
               <div className="flex gap-2">
                 <button onClick={() => updateStatus(reg.id, 'approved')}
                   disabled={reg.payment_status === 'approved'}

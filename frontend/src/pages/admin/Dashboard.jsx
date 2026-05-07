@@ -39,19 +39,6 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick links */}
-		<div className="grid grid-cols-2 gap-3">
-  {/* Existing links... */}
-  <Link to="/admin/meetups/new">...</Link>
-  <Link to="/admin/players">...</Link>
-
-  {/* Add this new link below them */}
-  <Link to="/admin/settings">
-    <div className="card text-center cursor-pointer hover:shadow-md transition">
-      <div className="text-2xl mb-1">⚙️</div>
-      <div className="text-sm font-semibold">Settings</div>
-    </div>
-  </Link>
-</div>
         <div className="grid grid-cols-2 gap-3">
           <Link to="/admin/meetups/new">
             <div className="card bg-brand-600 text-white text-center cursor-pointer hover:bg-brand-700 transition">

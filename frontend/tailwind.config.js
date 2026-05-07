@@ -3,7 +3,6 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
-
       fontFamily: {
         sans: ['DM Sans', 'sans-serif'],
         display: ['Clash Display', 'DM Sans', 'sans-serif'],
