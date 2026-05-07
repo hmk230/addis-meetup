@@ -120,29 +120,38 @@ const getMyRegistrations = async (req, res) => {
 
 const getMeetupRegistrations = async (req, res) => {
   try {
-    const meetup_id = req.params.meetup_id?.toString().trim();
+    // 1. Force the ID to be a clean string (removes spaces and hidden browser characters)
+    const meetup_id = req.params.meetup_id ? req.params.meetup_id.toString().trim() : null;
 
-    if (!meetup_id) return res.status(400).json({ error: 'ID is missing' });
+    if (!meetup_id) {
+      return res.status(400).json({ error: 'Meetup ID is missing' });
+    }
 
-    // We use a try block here so that if the UUID is malformed, 
-    // the server doesn't crash with "Database error"
+    // 2. Perform the query
     const { data, error } = await supabase
       .from('registrations')
       .select('*, users(full_name, phone, age)')
       .eq('meetup_id', meetup_id)
       .order('registered_at', { ascending: false });
 
+    // 3. Handle the "Bad UUID" error specifically
     if (error) {
-      // If the ID is the wrong length, Supabase returns a '22P02' error code
+      // Error code '22P02' is PostgreSQL's way of saying "The ID is the wrong length/format"
       if (error.code === '22P02') {
-        return res.status(400).json({ error: 'The ID you provided is not a valid UUID. Check for missing characters.' });
+        return res.status(400).json({ 
+          error: 'The ID is incomplete. It must be exactly 36 characters.',
+          received_length: meetup_id.length 
+        });
       }
-      return res.status(500).json({ error: 'Database rejected the request: ' + error.message });
+      return res.status(500).json({ error: 'Database error: ' + error.message });
     }
 
-    res.json(data);
+    // 4. Return the data (even if empty)
+    res.json(data || []);
+    
   } catch (e) {
-    res.status(500).json({ error: 'Server crash prevented: ' + e.message });
+    console.error('Fetch Error:', e);
+    res.status(500).json({ error: 'Server error occurred' });
   }
 };
 
