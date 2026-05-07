@@ -120,13 +120,21 @@ const getMyRegistrations = async (req, res) => {
 // registrationController.js
 const getMeetupRegistrations = async (req, res) => {
   try {
-    // Check both possible parameter names
-    const meetup_id = (req.params.id || req.params.meetup_id)?.toString().trim();
+    // 1. Try to get the ID from 'id' (matches main.jsx) or 'meetup_id' (matches registrations.js)
+    const raw_id = req.params.id || req.params.meetup_id || req.query.id;
+    
+    // 2. Clean it up
+    const meetup_id = raw_id?.toString().trim();
 
+    // 3. If it's still missing or the literal word "undefined", stop here
     if (!meetup_id || meetup_id === 'undefined') {
-      return res.status(400).json({ error: "Meetup ID is missing or undefined" });
+      return res.status(400).json({ 
+        error: "Meetup ID is missing or undefined",
+        received: meetup_id 
+      });
     }
 
+    // 4. Search Supabase
     const { data, error } = await supabase
       .from('registrations')
       .select('*, users(full_name, phone, age)')
@@ -134,6 +142,7 @@ const getMeetupRegistrations = async (req, res) => {
       .order('registered_at', { ascending: false });
 
     if (error) return res.status(500).json({ error: error.message });
+    
     res.json(data || []);
   } catch (e) {
     res.status(500).json({ error: e.message });

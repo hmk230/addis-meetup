@@ -19,18 +19,13 @@ export default function AdminRegistrations() {
   const [filter, setFilter] = useState('all');
   const [lightbox, setLightbox] = useState(null);
 
-  useEffect(() => {
-    if (!id) return;
-    
-    Promise.all([
-      api.get(`/registrations/meetup/${id}`), // Send the 'id' to the backend
-      api.get(`/meetups/${id}`)
-    ]).then(([r, m]) => {
-      setRegistrations(r.data);
-      setMeetup(m.data);
-    }).catch(() => toast.error('Failed to load registrations'))
-      .finally(() => setLoading(false));
-  }, [id]);
+useEffect(() => {
+  if (id && id !== 'undefined') {
+    api.get(`/registrations/meetup/${id}`) // This hits your Render backend
+      .then(r => setRegistrations(r.data))
+      .catch(err => console.error(err));
+  }
+}, [id]);
   // ... rest of component
 
 
