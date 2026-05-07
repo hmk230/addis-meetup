@@ -120,25 +120,29 @@ const getMyRegistrations = async (req, res) => {
 
 const getMeetupRegistrations = async (req, res) => {
   try {
-    // 1. Try to find the ID in all possible places (url params or query string)
-    const meetup_id = (req.params.meetup_id || req.params.id || req.query.meetup_id)?.toString().trim();
+    const meetup_id = req.params.meetup_id?.toString().trim();
 
-    if (!meetup_id || meetup_id === 'undefined' || meetup_id.startsWith(':')) {
-      return res.status(400).json({ 
-        error: "No ID detected in the URL.",
-        details: "The backend expected an ID but received: " + meetup_id 
-      });
-    }
-
-    // 2. Fetch from Supabase
     const { data, error } = await supabase
       .from('registrations')
       .select('*, users(full_name, phone, age)')
-      .eq('meetup_id', meetup_id)
-      .order('registered_at', { ascending: false });
+      .eq('meetup_id', meetup_id);
 
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+    // If data is empty, it means the ID exists but has no players.
+    // If we want to check if the MEETUP itself exists:
+    const { data: meetup } = await supabase
+      .from('meetups')
+      .select('title')
+      .eq('id', meetup_id)
+      .single();
+
+    if (!meetup) {
+      return res.status(404).json({ 
+        error: "Meetup not found", 
+        searched_for_id: meetup_id 
+      });
+    }
+
+    res.json(data || []);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
