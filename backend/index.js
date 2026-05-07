@@ -1,55 +1,64 @@
-const express = require(‘express’);
-const cors = require(‘cors’);
-const helmet = require(‘helmet’);
-const rateLimit = require(‘express-rate-limit’);
-require(‘dotenv’).config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
 
 const app = express();
 
-// Security headers
+// ── Security headers (hides Express, sets CSP, etc.) ──────────────────────────
 app.use(helmet());
 
-// CORS — allow all origins if FRONTEND_URL not set, otherwise restrict
-const FRONTEND_URL = process.env.FRONTEND_URL || ‘’;
+// ── CORS: only allow your frontend ────────────────────────────────────────────
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+  : [];
+
 app.use(cors({
-origin: FRONTEND_URL ? FRONTEND_URL.split(’,’).map(o => o.trim()) : ‘*’,
-credentials: true,
+  origin: (origin, cb) => {
+    // Allow requests with no origin (mobile apps, curl) only in dev
+    if (!origin && process.env.NODE_ENV !== 'production') return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
 }));
 
-// Body limit
-app.use(express.json({ limit: ‘10kb’ }));
+// ── Body size limit ────────────────────────────────────────────────────────────
+app.use(express.json({ limit: '10kb' }));
 
-// Rate limiter — global
+// ── Global rate limiter: 100 req / 15 min per IP ──────────────────────────────
 app.use(rateLimit({
-windowMs: 15 * 60 * 1000,
-max: 100,
-standardHeaders: true,
-legacyHeaders: false,
-message: { error: ‘Too many requests, please try again later.’ },
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
 }));
 
-// Tighter limiter for auth
+// ── Auth routes get a tighter limiter: 10 attempts / 15 min ──────────────────
 const authLimiter = rateLimit({
-windowMs: 15 * 60 * 1000,
-max: 20,
-message: { error: ‘Too many login attempts, please try again in 15 minutes.’ },
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts, please try again in 15 minutes.' },
 });
-app.use(’/api/auth/login’, authLimiter);
-app.use(’/api/auth/signup’, authLimiter);
 
-// Routes
-app.use(’/api/auth’, require(’./routes/auth’));
-app.use(’/api/meetups’, require(’./routes/meetups’));
-app.use(’/api/registrations’, require(’./routes/registrations’));
-app.use(’/api/admin’, require(’./routes/admin’));
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/signup', authLimiter);
 
-app.get(’/health’, (_, res) => res.json({ status: ‘ok’ }));
+// ── Routes ────────────────────────────────────────────────────────────────────
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/meetups', require('./routes/meetups'));
+app.use('/api/registrations', require('./routes/registrations'));
+app.use('/api/admin', require('./routes/admin'));
 
-// Global error handler
+app.get('/health', (_, res) => res.json({ status: 'ok' }));
+
+// ── Global error handler (never leak stack traces) ────────────────────────────
 app.use((err, req, res, _next) => {
-console.error(err.message);
-res.status(err.status || 500).json({ error: ‘Something went wrong.’ });
+  console.error(err);
+  res.status(err.status || 500).json({ error: 'Something went wrong.' });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Addis Meetup API running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Addis Meetup API running on port ${PORT}`));
