@@ -21,9 +21,12 @@ export default function AdminRegistrations() {
 
 useEffect(() => {
   if (id && id !== 'undefined') {
-    api.get(`/registrations/meetup/${id}`) // This hits your Render backend
-      .then(r => setRegistrations(r.data))
-      .catch(err => console.error(err));
+    // Ensure this path matches your backend router
+    api.get(`/registrations/meetup/${id}`) 
+      .then(r => {
+        setRegistrations(r.data);
+      })
+      .catch(err => toast.error('Could not fetch registrations'));
   }
 }, [id]);
   // ... rest of component
