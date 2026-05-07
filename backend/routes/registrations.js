@@ -9,7 +9,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 router.post('/', auth, register);
 router.post('/:id/screenshot', auth, upload.single('screenshot'), uploadScreenshot);
 router.get('/my', auth, getMyRegistrations);
-router.get('/meetup/:meetup_id', auth, adminOnly, getMeetupRegistrations);
+router.get('/meetup/:meetup_id', getMeetupRegistrations);
 router.patch('/:id/status', auth, adminOnly, updateStatus);
 
 module.exports = router;

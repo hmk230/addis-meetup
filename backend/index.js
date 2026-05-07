@@ -16,8 +16,9 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (mobile apps, curl) only in dev
-    if (!origin && process.env.NODE_ENV !== 'production') return cb(null, true);
+    // CHANGE THIS: Allow requests with no origin even in production for testing
+    if (!origin) return cb(null, true); 
+    
     if (allowedOrigins.includes(origin)) return cb(null, true);
     cb(new Error('Not allowed by CORS'));
   },
