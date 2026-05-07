@@ -32,7 +32,7 @@ const register = async (req, res) => {
       return res.status(400).json({ error: `Player count must be 1–${MAX_PLAYERS_PER_REG}` });
     if (game_count < 1 || game_count > MAX_GAMES_PER_REG)
       return res.status(400).json({ error: `Game count must be 1–${MAX_GAMES_PER_REG}` });
-    if (!/^[0-9a-f-]{36}$/.test(meetup_id))
+    if (!meetup_id)
       return res.status(400).json({ error: 'Invalid meetup ID' });
 
     const { data: meetup } = await supabase.from('meetups').select('*').eq('id', meetup_id).single();
@@ -130,7 +130,7 @@ const getMyRegistrations = async (req, res) => {
 const getMeetupRegistrations = async (req, res) => {
   try {
     const { meetup_id } = req.params;
-    if (!/^[0-9a-f-]{36}$/.test(meetup_id))
+    if (!meetup_id)
       return res.status(400).json({ error: 'Invalid meetup ID' });
     const { data, error } = await supabase
       .from('registrations')
