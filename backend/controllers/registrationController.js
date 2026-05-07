@@ -120,34 +120,27 @@ const getMyRegistrations = async (req, res) => {
 
 const getMeetupRegistrations = async (req, res) => {
   try {
-    // 1. Automatically remove any accidental spaces or hidden characters
-    const meetup_id = req.params.meetup_id?.toString().trim();
+    // 1. Try to find the ID in all possible places (url params or query string)
+    const meetup_id = (req.params.meetup_id || req.params.id || req.query.meetup_id)?.toString().trim();
 
-    if (!meetup_id || meetup_id === 'undefined') {
-      return res.status(400).json({ error: "No ID detected in the URL." });
+    if (!meetup_id || meetup_id === 'undefined' || meetup_id.startsWith(':')) {
+      return res.status(400).json({ 
+        error: "No ID detected in the URL.",
+        details: "The backend expected an ID but received: " + meetup_id 
+      });
     }
 
-    // 2. Fetch data from Supabase
+    // 2. Fetch from Supabase
     const { data, error } = await supabase
       .from('registrations')
       .select('*, users(full_name, phone, age)')
       .eq('meetup_id', meetup_id)
       .order('registered_at', { ascending: false });
 
-    // 3. If the ID is still wrong, give a clear message instead of a crash
-    if (error) {
-      if (error.code === '22P02') {
-        return res.status(400).json({ 
-          error: "The ID is too short or malformed. It must be 36 characters.",
-          received: meetup_id
-        });
-      }
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json(data || []);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
   } catch (e) {
-    res.status(500).json({ error: "Server error: " + e.message });
+    res.status(500).json({ error: e.message });
   }
 };
 
