@@ -120,37 +120,35 @@ const getMyRegistrations = async (req, res) => {
 
 const getMeetupRegistrations = async (req, res) => {
   try {
-    // 1. Force the ID to be a clean string (removes spaces and hidden browser characters)
-    const meetup_id = req.params.meetup_id ? req.params.meetup_id.toString().trim() : null;
+    // 1. Get the ID from the URL and clean it up
+    const raw_id = req.params.meetup_id;
 
-    if (!meetup_id) {
-      return res.status(400).json({ error: 'Meetup ID is missing' });
+    // 2. If it is missing or literally 'undefined', stop here
+    if (!raw_id || raw_id === 'undefined' || raw_id.trim() === '') {
+      return res.status(400).json({ 
+        error: "No ID detected in the URL.", 
+        help: "Your URL should look like: /api/registrations/meetup/98b66518-..." 
+      });
     }
 
-    // 2. Perform the query
+    const meetup_id = raw_id.trim();
+
+    // 3. Search the database
+    // We search by ID. If you want to search by TITLE, you must use a different query.
     const { data, error } = await supabase
-  .from('registrations')
-  .select('*, users(full_name, phone), meetups!inner(title)')
-  .or(`meetup_id.eq.${meetup_id},meetups.title.ilike.%${meetup_id}%`);
+      .from('registrations')
+      .select('*, users(full_name, phone, age)')
+      .eq('meetup_id', meetup_id)
+      .order('registered_at', { ascending: false });
 
-    // 3. Handle the "Bad UUID" error specifically
     if (error) {
-      // Error code '22P02' is PostgreSQL's way of saying "The ID is the wrong length/format"
-      if (error.code === '22P02') {
-        return res.status(400).json({ 
-          error: 'The ID is incomplete. It must be exactly 36 characters.',
-          received_length: meetup_id.length 
-        });
-      }
-      return res.status(500).json({ error: 'Database error: ' + error.message });
+      return res.status(500).json({ error: "Database error: " + error.message });
     }
 
-    // 4. Return the data (even if empty)
-    res.json(data || []);
-    
+    res.json(data);
+
   } catch (e) {
-    console.error('Fetch Error:', e);
-    res.status(500).json({ error: 'Server error occurred' });
+    res.status(500).json({ error: "Server error: " + e.message });
   }
 };
 
