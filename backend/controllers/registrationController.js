@@ -117,47 +117,23 @@ const getMyRegistrations = async (req, res) => {
     res.status(500).json({ error: 'Failed to load registrations' });
   }
 };
-
+// registrationController.js
 const getMeetupRegistrations = async (req, res) => {
   try {
-    // We check params (URL), query (?id=), and body just to be safe
-    const meetup_id = (
-      req.params.meetup_id || 
-      req.query.meetup_id || 
-      req.params.id
-    )?.toString().trim();
+    // Check both possible parameter names
+    const meetup_id = (req.params.id || req.params.meetup_id)?.toString().trim();
 
-    // If it's still undefined, we stop and tell you exactly what the backend saw
     if (!meetup_id || meetup_id === 'undefined') {
-      return res.status(400).json({ 
-        error: "ID not caught by backend",
-        debug_info: {
-          params: req.params,
-          query: req.query,
-          url_received: req.originalUrl
-        }
-      });
+      return res.status(400).json({ error: "Meetup ID is missing or undefined" });
     }
 
-    // Now we search the database
     const { data, error } = await supabase
       .from('registrations')
       .select('*, users(full_name, phone, age)')
-      .eq('meetup_id', meetup_id);
+      .eq('meetup_id', meetup_id)
+      .order('registered_at', { ascending: false });
 
     if (error) return res.status(500).json({ error: error.message });
-
-    // Check if the meetup itself exists to give a better error if it doesn't
-    const { data: meetup } = await supabase
-      .from('meetups')
-      .select('title')
-      .eq('id', meetup_id)
-      .single();
-
-    if (!meetup) {
-      return res.status(404).json({ error: "Meetup ID does not exist in Supabase", id: meetup_id });
-    }
-
     res.json(data || []);
   } catch (e) {
     res.status(500).json({ error: e.message });

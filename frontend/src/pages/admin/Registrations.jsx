@@ -11,7 +11,7 @@ const STATUSES = ['pending', 'approved', 'rejected'];
 
 export default function AdminRegistrations() {
   // Route is /admin/meetups/:id/registrations — param name is "id"
-  const { id: meetup_id } = useParams();
+  const { id } = useParams(); // 'id' matches the :id in main.jsx
   const { t } = useLang();
   const [registrations, setRegistrations] = useState([]);
   const [meetup, setMeetup] = useState(null);
@@ -20,15 +20,19 @@ export default function AdminRegistrations() {
   const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
+    if (!id) return;
+    
     Promise.all([
-      api.get(`/registrations/meetup/${meetup_id}`),
-      api.get(`/meetups/${meetup_id}`)
+      api.get(`/registrations/meetup/${id}`), // Send the 'id' to the backend
+      api.get(`/meetups/${id}`)
     ]).then(([r, m]) => {
       setRegistrations(r.data);
       setMeetup(m.data);
     }).catch(() => toast.error('Failed to load registrations'))
       .finally(() => setLoading(false));
-  }, [meetup_id]);
+  }, [id]);
+  // ... rest of component
+
 
   const updateStatus = async (id, status) => {
     try {
