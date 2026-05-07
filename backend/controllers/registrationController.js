@@ -22,39 +22,30 @@ function calcTotal(basePrice, games, players) {
 
 const register = async (req, res) => {
   try {
-    // 1. Get the ID and trim any accidental spaces
-    const meetup_id = req.body.meetup_id ? req.body.meetup_id.trim() : null;
+    const meetup_id    = req.body.meetup_id;
     const player_count = parseInt(req.body.player_count);
     const game_count   = parseInt(req.body.game_count) || 1;
 
-    // 2. Basic validation (much simpler)
     if (!meetup_id || isNaN(player_count))
       return res.status(400).json({ error: 'Missing or invalid fields' });
-    
     if (player_count < 1 || player_count > MAX_PLAYERS_PER_REG)
       return res.status(400).json({ error: `Player count must be 1–${MAX_PLAYERS_PER_REG}` });
+    if (game_count < 1 || game_count > MAX_GAMES_PER_REG)
+      return res.status(400).json({ error: `Game count must be 1–${MAX_GAMES_PER_REG}` });
+    if (!/^[0-9a-f-]{36}$/.test(meetup_id))
+      return res.status(400).json({ error: 'Invalid meetup ID' });
 
-    // 3. Let Supabase try to find the meetup
-    // If the ID is truly broken, Supabase will return an error here
-    const { data: meetup, error: fetchError } = await supabase
-      .from('meetups')
-      .select('*')
-      .eq('id', meetup_id)
-      .single();
-
-    if (fetchError || !meetup) return res.status(404).json({ error: 'Meetup not found (Check your ID)' });
-    
-    // ... rest of your logic (checking status, spots, etc.) ...
+    const { data: meetup } = await supabase.from('meetups').select('*').eq('id', meetup_id).single();
+    if (!meetup) return res.status(404).json({ error: 'Meetup not found' });
     if (meetup.status === 'closed') return res.status(400).json({ error: 'Meetup is closed' });
     if (meetup.spots_remaining < player_count)
       return res.status(400).json({ error: 'Not enough spots remaining' });
 
-    // (Continue with the rest of your existing registration logic)
     const { data: existing } = await supabase.from('registrations')
       .select('id').eq('meetup_id', meetup_id).eq('user_id', req.user.id).single();
-    
-    if (existing) return res.status(409).json({ error: 'You are already registered' });
+    if (existing) return res.status(409).json({ error: 'You are already registered for this meetup' });
 
+    // Generate unique reference code e.g. AFM-X3K9
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
     let ref_code = 'AFM-';
     for (let i = 0; i < 4; i++) ref_code += chars[Math.floor(Math.random() * chars.length)];
@@ -81,29 +72,9 @@ const register = async (req, res) => {
 
     const { data: settings } = await supabase.from('settings').select('*').limit(1).single();
     res.status(201).json({ registration: data, payment_info: settings });
-
   } catch (e) {
-    console.error('register error:', e);
-    res.status(500).json({ error: 'An unexpected error occurred' });
-  }
-};
-
-const getMeetupRegistrations = async (req, res) => {
-  try {
-    const meetup_id = req.params.meetup_id ? req.params.meetup_id.trim() : null;
-    
-    if (!meetup_id) return res.status(400).json({ error: 'Meetup ID required' });
-
-    const { data, error } = await supabase
-      .from('registrations')
-      .select('*, users(full_name, phone, age)')
-      .eq('meetup_id', meetup_id)
-      .order('registered_at', { ascending: false });
-
-    if (error) return res.status(500).json({ error: 'Failed to load registrations' });
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('register:', e);
+    res.status(500).json({ error: 'Registration failed' });
   }
 };
 
