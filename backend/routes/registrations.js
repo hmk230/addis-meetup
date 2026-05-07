@@ -6,10 +6,12 @@ const { auth, adminOnly } = require('../middleware/auth');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-router.post('/', auth, register);
-router.post('/:id/screenshot', auth, upload.single('screenshot'), uploadScreenshot);
+// IMPORTANT: specific routes must come BEFORE wildcard /:id routes
 router.get('/my', auth, getMyRegistrations);
 router.get('/meetup/:meetup_id', auth, adminOnly, getMeetupRegistrations);
+
+router.post('/', auth, register);
+router.post('/:id/screenshot', auth, upload.single('screenshot'), uploadScreenshot);
 router.patch('/:id/status', auth, adminOnly, updateStatus);
 
 module.exports = router;
