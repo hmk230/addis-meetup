@@ -129,10 +129,9 @@ const getMeetupRegistrations = async (req, res) => {
 
     // 2. Perform the query
     const { data, error } = await supabase
-      .from('registrations')
-      .select('*, users(full_name, phone, age)')
-      .eq('meetup_id', meetup_id)
-      .order('registered_at', { ascending: false });
+  .from('registrations')
+  .select('*, users(full_name, phone), meetups!inner(title)')
+  .or(`meetup_id.eq.${meetup_id},meetups.title.ilike.%${meetup_id}%`);
 
     // 3. Handle the "Bad UUID" error specifically
     if (error) {
