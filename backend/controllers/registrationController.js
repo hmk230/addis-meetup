@@ -32,7 +32,7 @@ const register = async (req, res) => {
       return res.status(400).json({ error: `Player count must be 1–${MAX_PLAYERS_PER_REG}` });
     if (game_count < 1 || game_count > MAX_GAMES_PER_REG)
       return res.status(400).json({ error: `Game count must be 1–${MAX_GAMES_PER_REG}` });
-    if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(meetup_id))
+    if (!/^[0-9a-f-]{36}$/.test(meetup_id))
       return res.status(400).json({ error: 'Invalid meetup ID' });
 
     const { data: meetup } = await supabase.from('meetups').select('*').eq('id', meetup_id).single();
@@ -81,7 +81,7 @@ const register = async (req, res) => {
 const uploadScreenshot = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id))
+    if (!/^[0-9a-f-]{36}$/.test(id))
       return res.status(400).json({ error: 'Invalid registration ID' });
 
     const file = req.file;
@@ -130,7 +130,7 @@ const getMyRegistrations = async (req, res) => {
 const getMeetupRegistrations = async (req, res) => {
   try {
     const { meetup_id } = req.params;
-    if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(meetup_id))
+    if (!/^[0-9a-f-]{36}$/.test(meetup_id))
       return res.status(400).json({ error: 'Invalid meetup ID' });
     const { data, error } = await supabase
       .from('registrations')
@@ -150,7 +150,7 @@ const updateStatus = async (req, res) => {
     const { id } = req.params;
     if (!['pending', 'approved', 'rejected'].includes(payment_status))
       return res.status(400).json({ error: 'Invalid status value' });
-    if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id))
+    if (!/^[0-9a-f-]{36}$/.test(id))
       return res.status(400).json({ error: 'Invalid registration ID' });
     const { data, error } = await supabase.from('registrations')
       .update({ payment_status }).eq('id', id).select().single();
