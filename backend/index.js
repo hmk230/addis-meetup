@@ -5,25 +5,21 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
-app.set('trust proxy', 1);
+
 // ── Security headers (hides Express, sets CSP, etc.) ──────────────────────────
 app.use(helmet());
 
 // ── CORS: only allow your frontend ────────────────────────────────────────────
 const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(o => o.trim()) // .trim() removes accidental spaces
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
   : [];
 
 app.use(cors({
   origin: (origin, cb) => {
-    // This fix is crucial for the "CORS BLOCKED: undefined" error
-    if (!origin) return cb(null, true); 
-
-    if (allowedOrigins.includes(origin)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Not allowed by CORS'));
-    }
+    // Allow requests with no origin (mobile apps, curl) only in dev
+    if (!origin && process.env.NODE_ENV !== 'production') return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
