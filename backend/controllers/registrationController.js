@@ -120,20 +120,29 @@ const getMyRegistrations = async (req, res) => {
 
 const getMeetupRegistrations = async (req, res) => {
   try {
-    // Use the ID from the URL and clean it up 
     const meetup_id = req.params.meetup_id?.toString().trim();
 
     if (!meetup_id) return res.status(400).json({ error: 'ID is missing' });
 
+    // We use a try block here so that if the UUID is malformed, 
+    // the server doesn't crash with "Database error"
     const { data, error } = await supabase
       .from('registrations')
-      .select('*, users(full_name, phone)')
-      .eq('meetup_id', meetup_id);
+      .select('*, users(full_name, phone, age)')
+      .eq('meetup_id', meetup_id)
+      .order('registered_at', { ascending: false });
 
-    if (error) return res.status(500).json({ error: 'Database error' });
+    if (error) {
+      // If the ID is the wrong length, Supabase returns a '22P02' error code
+      if (error.code === '22P02') {
+        return res.status(400).json({ error: 'The ID you provided is not a valid UUID. Check for missing characters.' });
+      }
+      return res.status(500).json({ error: 'Database rejected the request: ' + error.message });
+    }
+
     res.json(data);
   } catch (e) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server crash prevented: ' + e.message });
   }
 };
 
